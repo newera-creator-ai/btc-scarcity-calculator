@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>내 비트코인의 희소성 — Bitcoin Scarcity Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0e0b08;
+    --bg-card: #1a1510;
+    --bg-deep: #080604;
+    --gold: #e8b85a;
+    --gold-bright: #f7d080;
+    --gold-dim: #c49a40;
+    --gold-glow: rgba(232, 184, 90, 0.35);
+    --ink: #f5efe0;
+    --ink-muted: #d4c4a0;
+    --ink-faint: #a8967a;
+    --border: rgba(232, 184, 90, 0.42);
+    --border-strong: rgba(247, 208, 128, 0.78);
+    --display: 'Playfair Display', serif;
+    --body: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --panel-width: 420px;
+    --stat-panel-width: 470px;
+    --panel-height: 210px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--body); font-weight: 400;
+    min-height: 100vh; overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(232, 184, 90, 0.07), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(232, 184, 90, 0.04), transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+  .lang-toggle {
+    position: fixed;
+    top: 12px;
+    right: 14px;
+    z-index: 30;
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: rgba(8, 6, 4, 0.72);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(247, 208, 128, 0.12);
+    padding: 4px;
+  }
+  .lang-btn {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    min-width: 86px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .lang-btn:hover { color: var(--ink); }
+  .lang-btn:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 1px;
+  }
+  .lang-btn.is-active {
+    color: var(--gold-bright);
+    background: linear-gradient(180deg, rgba(232, 184, 90, 0.28), rgba(232, 184, 90, 0.16));
+    box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.3);
+  }
+  .container { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 60px 32px 120px; }
+  .header { text-align: center; margin-bottom: 60px; animation: fadeInUp 0.8s ease; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.3em; color: var(--gold-bright); text-transform: uppercase; margin-bottom: 20px; }
+  .headline { font-family: var(--display); font-size: clamp(36px, 6vw, 64px); font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 16px; color: var(--ink); }
+  .headline em { font-style: italic; color: var(--gold-bright); font-weight: 500; }
+  .subhead { font-size: 18px; color: var(--ink-muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+  .panel-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    margin-bottom: 60px;
+  }
+  .input-card {
+    background: rgba(232, 184, 90, 0.04);
+    border: 1px solid var(--border-strong); border-radius: 2px;
+    padding: 18px 20px; margin: 0;
+    width: min(100%, var(--panel-width));
+    height: var(--panel-height);
+    box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.18);
+    animation: fadeInUp 0.8s ease 0.1s both;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .input-label { font-family: var(--mono); font-size: 14px; letter-spacing: 0.18em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 16px; display: block; font-weight: 500; }
+  .input-help { margin-top: 8px; color: var(--ink-faint); font-size: 12px; line-height: 1.5; }
+  .input-error { margin-top: 6px; color: #ffcf96; font-size: 12px; min-height: 1.2em; }
+  .btc-input-wrapper { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border-strong); padding-bottom: 8px; margin-bottom: 10px; transition: border-color 0.3s; }
+  .btc-input-wrapper:focus-within { border-bottom-color: var(--gold-bright); }
+  .btc-input { flex: 1; background: transparent; border: none; outline: none; color: var(--ink); font-family: var(--mono); font-size: 42px; font-weight: 700; letter-spacing: -0.02em; width: 100%; }
+  .btc-input::placeholder { color: var(--ink-faint); }
+  .btc-input::-webkit-outer-spin-button,
+  .btc-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .btc-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .btc-suffix { font-family: var(--mono); font-size: 16px; color: var(--gold-bright); letter-spacing: 0.14em; font-weight: 600; }
+  .quick-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .quick-btn { background: rgba(232, 184, 90, 0.06); border: 1px solid var(--border); color: var(--ink-muted); padding: 7px 12px; border-radius: 2px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+  .quick-btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); background: rgba(232, 184, 90, 0.1); }
+  .results {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 0;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: calc(var(--stat-panel-width) * 2 + 24px);
+    max-width: 100%;
+  }
+  @media (max-width: 1160px) { .results { flex-wrap: wrap; } }
+  @media (max-width: 768px) { .results { gap: 16px; } }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    width: min(100%, var(--stat-panel-width));
+    height: var(--panel-height);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.16);
+  }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 48px; height: 2px; background: var(--gold); }
+  .stat-label {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: clamp(20px, 2.6vw, 32px);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--gold-bright);
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+  .stat-value-sub { font-family: var(--mono); font-size: 13px; color: var(--gold-dim); letter-spacing: 0.08em; margin-bottom: 16px; font-weight: 500; }
+  .stat-desc { font-size: 15px; color: var(--ink-muted); line-height: 1.6; }
+  .stat-desc strong { color: var(--gold-bright); font-weight: 600; }
+  .stat-fraction { font-family: var(--mono); font-size: 13px; color: var(--ink-faint); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); letter-spacing: 0.05em; word-break: break-all; font-weight: 400; }
+  .input-card > *,
+  .stat-card > * { width: 100%; }
+  .section { margin-top: 56px; animation: fadeInUp 0.8s ease 0.2s both; }
+  .section-title { font-family: var(--display); font-size: 34px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.01em; color: var(--ink); }
+  .section-desc { font-size: 16px; color: var(--ink-muted); margin-bottom: 32px; line-height: 1.7; max-width: 760px; }
+  .rarity-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+  .scarcity-hero { background: rgba(232, 184, 90, 0.05); border: 1px solid var(--border-strong); border-radius: 2px; padding: 40px 32px; text-align: center; margin-bottom: 0; }
+  .scarcity-title {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .scarcity-basis {
+    font-size: 14px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .scarcity-hero-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.3em; color: var(--gold-bright); text-transform: uppercase; margin-bottom: 24px; font-weight: 500; }
+  .scarcity-big { font-family: var(--mono); font-size: clamp(40px, 7vw, 80px); font-weight: 700; line-height: 1.1; color: var(--gold-bright); letter-spacing: -0.03em; margin-bottom: 8px; }
+  .scarcity-big .suffix { font-family: var(--display); font-size: 0.38em; color: var(--gold); font-style: italic; margin-left: 10px; font-weight: 500; letter-spacing: 0; }
+  .scarcity-sub { font-size: 18px; color: var(--ink-muted); margin-top: 24px; line-height: 1.75; }
+  .scarcity-sub strong { color: var(--gold-bright); font-weight: 600; }
+  .scarcity-estimate {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .scarcity-estimate strong { color: var(--gold-bright); font-weight: 600; }
+  .land-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100%;
+    text-align: center;
+  }
+  .land-title {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .land-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .land-main {
+    font-family: var(--mono);
+    font-size: clamp(24px, 3.8vw, 38px);
+    color: var(--gold-bright);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .land-sub {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+  }
+  .land-city {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink-muted);
+  }
+  .land-city strong { color: var(--gold-bright); font-weight: 600; }
+  .land-foot {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+  @media (max-width: 980px) {
+    .rarity-layout { grid-template-columns: 1fr; }
+  }
+  .grid-container { background: var(--bg-deep); border: 1px solid var(--border-strong); border-radius: 2px; padding: 24px; box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.14); text-align: center; }
+  .grid-title { margin-bottom: 10px; }
+  .grid-legend { display: flex; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 13px; color: var(--ink-muted); letter-spacing: 0.08em; font-weight: 500; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-dot.crowd { background: #6b6050; }
+  .legend-dot.you { background: var(--gold-bright); box-shadow: 0 0 8px var(--gold-glow); }
+  #population-canvas { width: 100%; display: block; }
+  .grid-caption { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 16px; color: var(--ink-muted); line-height: 1.7; }
+  .grid-caption .highlight { color: var(--gold-bright); font-weight: 600; }
+  .assumption-note {
+    margin-top: 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--border-strong);
+    background: rgba(232, 184, 90, 0.04);
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--ink-muted);
+  }
+  .assumption-note strong { color: var(--gold-bright); font-weight: 600; }
+  .rarity-alt {
+    margin-top: 12px;
+    border: 1px solid var(--border-strong);
+    background: rgba(232, 184, 90, 0.08);
+    padding: 16px 18px;
+  }
+  .rarity-alt-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .rarity-alt-main {
+    font-family: var(--mono);
+    font-size: 28px;
+    color: var(--gold-bright);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .rarity-alt-sub {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+  }
+  .rarity-alt-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .rarity-metric {
+    border: 1px solid var(--border-strong);
+    background: rgba(8, 6, 4, 0.35);
+    padding: 8px;
+    text-align: center;
+  }
+  .rarity-metric-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .rarity-metric-value {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--gold-bright);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .footer { margin-top: 100px; padding-top: 40px; border-top: 1px solid var(--border); text-align: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; color: var(--ink-faint); line-height: 2; }
+  .footer a { color: var(--ink-muted); }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    white-space: nowrap;
+  }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .divider { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 34px 0; }
+  .divider::before, .divider::after { content: ''; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); flex: 1; max-width: 200px; }
+  .divider-ornament { font-family: var(--display); font-size: 20px; font-style: italic; color: var(--gold); }
+  #population-section { margin-top: 4px; }
+
+  /* One-screen dashboard layout for large desktop viewports */
+  @media (min-width: 1280px) and (min-height: 860px) {
+    body { overflow: hidden; }
+    .container {
+      max-width: 1500px;
+      height: 100vh;
+      padding: 14px 20px 10px;
+      display: grid;
+      grid-template-columns: minmax(380px, 0.9fr) minmax(620px, 1.1fr);
+      grid-template-rows: auto auto auto auto auto;
+      grid-template-areas:
+        "header header"
+        "top top"
+        "rarity rarity"
+        "grid grid"
+        "footer footer";
+      gap: 10px 14px;
+      align-content: start;
+    }
+    .header { grid-area: header; margin-bottom: 0; text-align: left; animation: none; }
+    .eyebrow { margin-bottom: 8px; font-size: 11px; }
+    .headline { font-size: clamp(24px, 2.4vw, 34px); margin-bottom: 8px; line-height: 1.04; white-space: nowrap; }
+    .subhead { margin: 0; max-width: none; font-size: 15px; line-height: 1.45; }
+    .panel-row { grid-area: top; margin-bottom: 0; gap: 10px; justify-content: flex-start; flex-wrap: nowrap; }
+    .input-card { margin: 0; max-width: none; padding: 14px 14px; animation: none; }
+    .input-label { margin-bottom: 10px; font-size: 12px; }
+    .btc-input-wrapper { margin-bottom: 12px; }
+    .btc-input { font-size: 40px; }
+    .btc-suffix { font-size: 16px; }
+    .quick-btn { padding: 8px 14px; font-size: 13px; }
+    .input-help, .input-error { margin-top: 8px; font-size: 12px; }
+    .results { margin-bottom: 0; gap: 10px; align-content: start; justify-content: flex-start; flex-wrap: nowrap; width: calc(var(--stat-panel-width) * 2 + 10px); }
+    .stat-card { padding: 14px; }
+    .stat-label { font-size: 17px; margin-bottom: 8px; }
+    .stat-value { font-size: clamp(18px, 2vw, 26px); margin-bottom: 4px; }
+    .stat-value-sub { margin-bottom: 10px; font-size: 12px; }
+    .stat-desc { font-size: 14px; line-height: 1.45; }
+    .stat-fraction { margin-top: 8px; padding-top: 8px; font-size: 12px; }
+    .section { margin-top: 0; animation: none; }
+    #rarity-section { grid-area: rarity; }
+    #population-section { grid-area: grid; }
+    .section-title { font-size: 24px; margin-bottom: 6px; }
+    .section-desc { font-size: 15px; margin-bottom: 10px; line-height: 1.45; max-width: none; }
+    .scarcity-hero { margin-bottom: 0; padding: 14px 16px; }
+    .scarcity-title { font-size: 17px; margin-bottom: 8px; }
+    .scarcity-basis { font-size: 12px; margin-bottom: 8px; }
+    .scarcity-hero-label { margin-bottom: 10px; }
+    .scarcity-big { font-size: clamp(28px, 4vw, 48px); margin-bottom: 4px; }
+    .scarcity-sub { margin-top: 10px; font-size: 15px; line-height: 1.55; }
+    .scarcity-estimate { margin-top: 8px; font-size: 12px; }
+    .rarity-layout { gap: 10px; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr); }
+    .land-card { padding: 14px 16px; }
+    .land-title { font-size: 17px; margin-bottom: 8px; }
+    .land-label { margin-bottom: 8px; }
+    .land-main { font-size: clamp(20px, 2.5vw, 30px); margin-bottom: 4px; }
+    .land-sub { font-size: 13px; line-height: 1.45; }
+    .land-city { margin-top: 10px; padding-top: 8px; font-size: 13px; line-height: 1.45; }
+    .land-foot { margin-top: 8px; font-size: 10px; }
+    .grid-container { padding: 12px 14px; }
+    .grid-legend { margin-bottom: 10px; gap: 16px; }
+    .legend-item { font-size: 12px; }
+    .grid-caption { margin-top: 10px; padding-top: 8px; font-size: 14px; line-height: 1.45; }
+    .assumption-note { margin-top: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+    .divider { display: none; }
+    .footer { grid-area: footer; margin-top: 0; padding-top: 8px; font-size: 11px; line-height: 1.45; }
+  }
+</style>
+</head>
+<body>
+<div class="lang-toggle" role="group" aria-label="Language toggle">
+  <button type="button" class="lang-btn is-active" id="lang-ko">한국어</button>
+  <button type="button" class="lang-btn" id="lang-en">English</button>
+</div>
+
+<div class="container">
+
+  <header class="header">
+    <div class="eyebrow" id="eyebrow-text">Bitcoin Scarcity Calculator</div>
+    <h1 class="headline" id="headline-text">당신의 비트코인은 얼마나 <em>희소한가</em></h1>
+    <p class="subhead" id="subhead-text">실제 비트코인 보유자 분포 데이터를 기반으로, 전 세계 83억 인구 중 당신이 차지하는 희소성을 계산합니다. ⚠ 단순 참고용/재미용으로 보시기 바랍니다. 투자 조언이 아니며, 매매 판단 책임은 사용자에게 있습니다.</p>
+  </header>
+
+  <div class="panel-row">
+    <div class="input-card" id="input-card">
+      <label class="input-label" id="input-label" for="btc-input">보유 비트코인 입력</label>
+      <div class="btc-input-wrapper">
+        <input type="number" id="btc-input" class="btc-input" placeholder="0.00" step="0.001" min="0" max="5000000" value="0.1" aria-describedby="btc-input-help btc-input-error" />
+        <span class="btc-suffix">BTC</span>
+      </div>
+      <div class="input-help" id="btc-input-help">입력 범위: 0 ~ 5,000,000 BTC</div>
+      <div class="input-error" id="btc-input-error" aria-live="polite"></div>
+      <div class="quick-btns">
+        <button type="button" class="quick-btn" data-amount="0.01">0.01</button>
+        <button type="button" class="quick-btn" data-amount="0.1">0.1</button>
+        <button type="button" class="quick-btn" data-amount="0.5">0.5</button>
+        <button type="button" class="quick-btn" data-amount="1">1</button>
+        <button type="button" class="quick-btn" data-amount="5">5</button>
+        <button type="button" class="quick-btn" data-amount="10">10</button>
+      </div>
+    </div>
+
+    <div class="results" id="stats-results">
+      <div class="stat-card">
+        <div class="stat-label" id="stat-label-total">전체 공급량 (2,100만 개) 중</div>
+        <div class="stat-value" id="ratio-total">— 개 중 1개</div>
+        <div class="stat-value-sub" id="ratio-total-pct">—</div>
+        <div class="stat-desc" id="stat-desc-total">이론적 최대 발행량 기준 희소성</div>
+        <div class="stat-fraction" id="satoshi-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" id="stat-label-effective">유효 공급량 (~1,651만 개) 중</div>
+        <div class="stat-value" id="ratio-effective">— 개 중 1개</div>
+        <div class="stat-value-sub" id="ratio-effective-pct">—</div>
+        <div class="stat-desc" id="stat-desc-effective">분실분 제외 실제 유통 기준 희소성</div>
+        <div class="stat-fraction" id="satoshi-effective">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-ornament">✦</span></div>
+
+  <section class="section" id="rarity-section">
+    <div class="rarity-layout">
+      <div class="scarcity-hero">
+        <h3 class="scarcity-title" id="rarity-card-title">세계 인구 중 몇 명당 1명</h3>
+        <div class="scarcity-basis" id="rarity-basis-text">실제 비트코인 지갑 분포(Glassnode, BitInfoCharts 데이터)를 기준</div>
+        <div class="scarcity-hero-label" id="hero-label">Your Rarity</div>
+        <div class="scarcity-big" id="hero-ratio">— <span class="suffix">명 중 1명</span></div>
+        <div class="scarcity-sub" id="hero-sub" aria-live="polite">비트코인을 입력해 주세요.</div>
+        <div class="scarcity-estimate" id="hero-estimate" aria-live="polite">Estimated holders: —</div>
+      </div>
+      <aside class="land-card" aria-live="polite">
+        <h3 class="land-title" id="land-title">내 BTC를 땅 면적으로 보면?</h3>
+        <div class="land-label">BTC → EARTH LAND AREA</div>
+        <div class="land-main" id="land-area-main">— km²</div>
+        <div class="land-sub" id="land-area-sub">보유량을 2,100만 BTC 기준으로 지구 육지 면적에 선형 환산한 값입니다.</div>
+        <div class="land-city" id="land-area-city">비트코인을 입력하면 유사 면적 도시 비교가 표시됩니다.</div>
+        <div class="land-foot" id="land-area-foot">ASSUMPTION: 21,000,000 BTC = 148,940,000 km² (EARTH LAND AREA)</div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section" id="population-section">
+    <div class="grid-container">
+      <h2 class="section-title grid-title" id="population-title">점 10,000개로 표현한 세계</h2>
+      <p class="section-desc" id="population-desc">아래 10,000개의 점은 약89억명의 세계인구를 10,000명으로 축소시켜 표현한 것입니다. 당신과 같은 수준의 비트코인 보유자가 이 중 <span style="color: var(--gold-bright)">골드로 빛나는 점</span>만큼 존재합니다.</p>
+      <div class="grid-legend">
+        <div class="legend-item"><div class="legend-dot crowd"></div><span id="legend-world">세계 인구 10,000명당</span></div>
+        <div class="legend-item"><div class="legend-dot you"></div><span id="legend-you">당신과 같은 수준의 보유자</span></div>
+      </div>
+      <canvas id="population-canvas" role="img" aria-label="세계 인구 10,000명 대비 비트코인 보유자 희소성 시각화" aria-describedby="canvas-desc"></canvas>
+      <div class="rarity-alt" id="rarity-alt" hidden>
+        <div class="rarity-alt-title" id="compact-title">Compact View</div>
+        <div class="rarity-alt-main" id="rarity-alt-main">—</div>
+        <div class="rarity-alt-sub" id="rarity-alt-sub">—</div>
+        <div class="rarity-alt-metrics">
+          <div class="rarity-metric">
+            <div class="rarity-metric-label" id="compact-label-dots">10,000명당</div>
+            <div class="rarity-metric-value" id="rarity-metric-dots">—</div>
+          </div>
+          <div class="rarity-metric">
+            <div class="rarity-metric-label" id="compact-label-pct">10,000명당 비율</div>
+            <div class="rarity-metric-value" id="rarity-metric-pct">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-caption" id="grid-caption" aria-live="polite">비트코인을 입력하면 여기에 비유가 나타납니다.</div>
+      <div class="assumption-note" id="assumption-note" aria-live="polite">
+        계산 전제: 이 시각화는 전 세계 인구 83억 명을 10,000명으로 축소해 같은 비율로 표시합니다.
+      </div>
+      <p id="canvas-desc" class="sr-only">회색 점은 세계 인구를 의미하고, 금색 점은 입력한 비트코인 수량 이상을 보유한 사람 비율을 의미합니다.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>DATA SNAPSHOT · 2026-04-18 · WORLD POP 8.3B · BTC CIRCULATION 20,015,000</div>
+    <div>METHOD · LOG-LOG INTERPOLATION ON ADDRESS BRACKETS · ADDRESS ≠ INDIVIDUAL</div>
+    <div id="footer-disclaimer">NOTICE · 주소 기반 추정치(실시간 아님)이며 정확한 개인 보유량과 다를 수 있습니다.</div>
+    <div>SOURCES · <a href="https://www.worldometers.info/world-population/" target="_blank" rel="noopener noreferrer">Worldometer Population</a> · <a href="https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html" target="_blank" rel="noopener noreferrer">BitInfoCharts Rich List</a> · <a href="https://insights.glassnode.com/" target="_blank" rel="noopener noreferrer">Glassnode Insights</a></div>
+  </footer>
+
+</div>
+
+<script>
+  const TOTAL_SUPPLY = 21_000_000;
+  const CURRENT_MINED = 20_015_000;
+  const LOST_ESTIMATE = 3_500_000;
+  const EFFECTIVE_SUPPLY = CURRENT_MINED - LOST_ESTIMATE;
+  const WORLD_POP = 8_300_000_000;
+  const INPUT_MAX_BTC = 5_000_000;
+  const EARTH_LAND_AREA_KM2 = 148_940_000;
+  const CITY_AREA_REFERENCES = [
+    { nameKo: '뉴욕 맨해튼', nameEn: 'Manhattan', areaKm2: 59.1 },
+    { nameKo: '샌프란시스코', nameEn: 'San Francisco', areaKm2: 121.4 },
+    { nameKo: '서울', nameEn: 'Seoul', areaKm2: 605.2 },
+    { nameKo: '부산', nameEn: 'Busan', areaKm2: 770.1 },
+    { nameKo: '제주도', nameEn: 'Jeju Island', areaKm2: 1849.0 },
+  ];
+  const I18N = {
+    ko: {
+      headline: '당신의 비트코인은 얼마나 <em>희소한가</em>',
+      subhead: '실제 비트코인 보유자 분포 데이터를 기반으로, 전 세계 83억 인구 중 당신이 차지하는 희소성을 계산합니다. ⚠ 단순 참고용/재미용으로 보시기 바랍니다. 투자 조언이 아니며, 매매 판단 책임은 사용자에게 있습니다.',
+      inputLabel: '보유 비트코인 입력',
+      inputHelp: `입력 범위: 0 ~ ${INPUT_MAX_BTC.toLocaleString('ko-KR')} BTC`,
+      statLabelTotal: '전체 공급량 (2,100만 개) 중',
+      statDescTotal: '이론적 최대 발행량 기준 희소성',
+      statLabelEffective: '유효 공급량 (~1,651만 개) 중',
+      statDescEffective: '분실분 제외 실제 유통 기준 희소성',
+      rarityCardTitle: '세계 인구 중 몇 명당 1명',
+      rarityBasis: '실제 비트코인 지갑 분포(Glassnode, BitInfoCharts 데이터)를 기준',
+      heroLabel: 'Your Rarity',
+      kpiHolders: '추정 보유자',
+      kpiRatio: '세계 비율',
+      kpiDots: '10,000점 환산',
+      kpiShare: '유효공급 점유',
+      populationTitle: '점 10,000개로 표현한 세계',
+      populationDesc: '아래 10,000개의 점은 약89억명의 세계인구를 10,000명으로 축소시켜 표현한 것입니다. 당신과 같은 수준의 비트코인 보유자가 이 중 <span style="color: var(--gold-bright)">골드로 빛나는 점</span>만큼 존재합니다.',
+      legendWorld: '세계 인구 10,000명당',
+      legendYou: '당신과 같은 수준의 보유자',
+      compactTitle: 'Compact View',
+      compactLabelDots: '10,000명당',
+      compactLabelPct: '10,000명당 비율',
+      landTitle: '내 BTC를 땅 면적으로 보면?',
+      landFoot: '가정: 21,000,000 BTC = 148,940,000 km² (지구 육지 면적)',
+      footerDisclaimer: 'NOTICE · 주소 기반 추정치(실시간 아님)이며 정확한 개인 보유량과 다를 수 있습니다.',
+      langKo: '한국어',
+      langEn: 'English',
+    },
+    en: {
+      headline: 'How <em>Rare</em> Is Your Bitcoin?',
+      subhead: 'Based on estimated holder-distribution data, this calculates your rarity among a world population of 8.3 billion. ⚠ For reference/entertainment only. Not investment advice; all trading decisions are your responsibility.',
+      inputLabel: 'Bitcoin Holdings',
+      inputHelp: `Input range: 0 ~ ${INPUT_MAX_BTC.toLocaleString('en-US')} BTC`,
+      statLabelTotal: 'Within Total Supply (21M BTC)',
+      statDescTotal: 'Scarcity against theoretical max supply',
+      statLabelEffective: 'Within Effective Supply (~16.51M BTC)',
+      statDescEffective: 'Scarcity against estimated circulating supply',
+      rarityCardTitle: 'How Many People Per 1 Holder?',
+      rarityBasis: 'Based on estimated wallet distribution (Glassnode, BitInfoCharts)',
+      heroLabel: 'Your Rarity',
+      kpiHolders: 'Estimated Holders',
+      kpiRatio: 'Global Ratio',
+      kpiDots: 'Per 10,000',
+      kpiShare: 'Eff. Supply Share',
+      populationTitle: 'World Expressed as 10,000 Dots',
+      populationDesc: 'These 10,000 dots are a scaled model of global population. Gold dots represent people holding at least your BTC amount.',
+      legendWorld: 'Per 10,000 people',
+      legendYou: 'Holders at your level',
+      compactTitle: 'Compact View',
+      compactLabelDots: 'Per 10,000',
+      compactLabelPct: 'Rate per 10,000',
+      landTitle: 'If My BTC Were Land Area',
+      landFoot: 'ASSUMPTION: 21,000,000 BTC = 148,940,000 km² (EARTH LAND AREA)',
+      footerDisclaimer: 'NOTICE · Address-based estimate (not real-time), and may differ from actual individual holdings.',
+      langKo: 'Korean',
+      langEn: 'English',
+    },
+  };
+  let currentLang = localStorage.getItem('btc_scarcity_lang') === 'en' ? 'en' : 'ko';
+
+  // 실제 비트코인 보유자 분포 (2026년 기준)
+  // 출처: Glassnode, BitInfoCharts
+  // (최소 BTC, 해당 양 이상을 보유한 전 세계 실제 개인 수)
+  const HOLDER_DISTRIBUTION = [
+    [100,      25_000],
+    [10,       150_000],
+    [1,        950_000],
+    [0.1,      10_000_000],
+    [0.01,     40_000_000],
+    [0.001,    150_000_000],
+    [0.0001,   400_000_000],
+    [0.00001,  500_000_000],
+  ].sort((a, b) => a[0] - b[0]); // asc
+
+  // 로그-로그 보간으로 BTC 양에 따른 실제 보유자 수 추정
+  function estimateHolders(btc) {
+    if (btc <= 0) return WORLD_POP;
+    const points = HOLDER_DISTRIBUTION;
+
+    if (btc <= points[0][0]) {
+      // lower-tail extrapolation for continuity near zero
+      const [x1, y1] = points[0];
+      const [x2, y2] = points[1];
+      const lb = Math.log10(Math.max(btc, 1e-12));
+      const lx1 = Math.log10(x1), ly1 = Math.log10(y1);
+      const lx2 = Math.log10(x2), ly2 = Math.log10(y2);
+      const slope = (ly2 - ly1) / (lx2 - lx1);
+      const estimated = Math.pow(10, ly1 + slope * (lb - lx1));
+      return Math.min(WORLD_POP, Math.max(1, estimated));
+    }
+    if (btc >= points[points.length - 1][0]) {
+      // extrapolate using last two points
+      const [x1, y1] = points[points.length - 2];
+      const [x2, y2] = points[points.length - 1];
+      const lb = Math.log10(btc);
+      const lx1 = Math.log10(x1), ly1 = Math.log10(y1);
+      const lx2 = Math.log10(x2), ly2 = Math.log10(y2);
+      const slope = (ly2 - ly1) / (lx2 - lx1);
+      const estimated = Math.pow(10, ly2 + slope * (lb - lx2));
+      return Math.min(WORLD_POP, Math.max(1, estimated));
+    }
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      if (btc >= x1 && btc <= x2) {
+        const lb = Math.log10(btc);
+        const lx1 = Math.log10(x1), ly1 = Math.log10(y1);
+        const lx2 = Math.log10(x2), ly2 = Math.log10(y2);
+        const t = (lb - lx1) / (lx2 - lx1);
+        const estimated = Math.pow(10, ly1 + t * (ly2 - ly1));
+        return Math.min(WORLD_POP, Math.max(1, estimated));
+      }
+    }
+    return 1;
+  }
+
+  const btcInput = document.getElementById('btc-input');
+  const quickBtns = document.querySelectorAll('.quick-btn');
+  const heroRatio = document.getElementById('hero-ratio');
+  const heroSub = document.getElementById('hero-sub');
+  const heroEstimate = document.getElementById('hero-estimate');
+  const canvas = document.getElementById('population-canvas');
+  const ctx = canvas.getContext('2d');
+  const rarityAlt = document.getElementById('rarity-alt');
+  const rarityAltMain = document.getElementById('rarity-alt-main');
+  const rarityAltSub = document.getElementById('rarity-alt-sub');
+  const rarityMetricDots = document.getElementById('rarity-metric-dots');
+  const rarityMetricPct = document.getElementById('rarity-metric-pct');
+  const gridCaption = document.getElementById('grid-caption');
+  const assumptionNote = document.getElementById('assumption-note');
+  const btcInputError = document.getElementById('btc-input-error');
+  const landAreaMain = document.getElementById('land-area-main');
+  const landAreaSub = document.getElementById('land-area-sub');
+  const landAreaCity = document.getElementById('land-area-city');
+  const langKoBtn = document.getElementById('lang-ko');
+  const langEnBtn = document.getElementById('lang-en');
+
+  function applyLanguage() {
+    const s = I18N[currentLang];
+    document.documentElement.lang = currentLang === 'ko' ? 'ko' : 'en';
+    document.getElementById('headline-text').innerHTML = s.headline;
+    document.getElementById('subhead-text').textContent = s.subhead;
+    document.getElementById('input-label').textContent = s.inputLabel;
+    document.getElementById('btc-input-help').textContent = s.inputHelp;
+    document.getElementById('stat-label-total').textContent = s.statLabelTotal;
+    document.getElementById('stat-desc-total').textContent = s.statDescTotal;
+    document.getElementById('stat-label-effective').textContent = s.statLabelEffective;
+    document.getElementById('stat-desc-effective').textContent = s.statDescEffective;
+    document.getElementById('rarity-card-title').textContent = s.rarityCardTitle;
+    document.getElementById('rarity-basis-text').textContent = s.rarityBasis;
+    document.getElementById('hero-label').textContent = s.heroLabel;
+    document.getElementById('population-title').textContent = s.populationTitle;
+    document.getElementById('population-desc').innerHTML = s.populationDesc;
+    document.getElementById('legend-world').textContent = s.legendWorld;
+    document.getElementById('legend-you').textContent = s.legendYou;
+    document.getElementById('compact-title').textContent = s.compactTitle;
+    document.getElementById('compact-label-dots').textContent = s.compactLabelDots;
+    document.getElementById('compact-label-pct').textContent = s.compactLabelPct;
+    document.getElementById('land-title').textContent = s.landTitle;
+    document.getElementById('land-area-foot').textContent = s.landFoot;
+    document.getElementById('footer-disclaimer').textContent = s.footerDisclaimer;
+    langKoBtn.textContent = s.langKo;
+    langEnBtn.textContent = s.langEn;
+    langKoBtn.classList.toggle('is-active', currentLang === 'ko');
+    langEnBtn.classList.toggle('is-active', currentLang === 'en');
+  }
+
+  const fmtKorean = (n) => {
+    if (n >= 1e8) {
+      const v = n / 1e8;
+      return (v >= 100 ? v.toFixed(0) : v.toFixed(1)) + '억';
+    }
+    if (n >= 1e4) {
+      const v = n / 1e4;
+      return (v >= 100 ? v.toFixed(0) : v.toFixed(1)) + '만';
+    }
+    return Math.round(n).toLocaleString();
+  };
+  const fmtCompactEn = (n) => new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+  const fmtPeopleUnit = (n) => currentLang === 'ko' ? fmtKorean(n) : fmtCompactEn(n);
+
+  const fmtAreaKm2 = (km2) => {
+    if (km2 >= 1000) return km2.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    if (km2 >= 10) return km2.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (km2 >= 0.1) return km2.toLocaleString(undefined, { maximumFractionDigits: 3 });
+    return km2.toLocaleString(undefined, { maximumFractionDigits: 5 });
+  };
+
+  const getNearestCityByArea = (km2) => {
+    if (km2 <= 0) return CITY_AREA_REFERENCES[0];
+    let nearest = CITY_AREA_REFERENCES[0];
+    let nearestDistance = Math.abs(Math.log(km2 / nearest.areaKm2));
+    for (let i = 1; i < CITY_AREA_REFERENCES.length; i++) {
+      const candidate = CITY_AREA_REFERENCES[i];
+      const distance = Math.abs(Math.log(km2 / candidate.areaKm2));
+      if (distance < nearestDistance) {
+        nearest = candidate;
+        nearestDistance = distance;
+      }
+    }
+    return nearest;
+  };
+
+  const fmtFraction = (btc, supply) => {
+    const pct = btc / supply * 100;
+    const ratio = supply / btc;
+    if (currentLang === 'ko') {
+      if (pct >= 1) return { main: pct.toFixed(2) + '%', sub: supply.toLocaleString('ko-KR') + '개 중 ' + btc + '개' };
+      if (pct >= 0.01) return { main: pct.toFixed(4) + '%', sub: Math.round(ratio).toLocaleString('ko-KR') + '분의 1' };
+      if (ratio < 1e6) return { main: Math.round(ratio).toLocaleString('ko-KR') + '분의 1', sub: pct.toFixed(6) + '%' };
+      if (ratio < 1e8) return { main: (ratio / 1e4).toFixed(1) + '만분의 1', sub: pct.toFixed(8) + '%' };
+      return { main: (ratio / 1e8).toFixed(1) + '억분의 1', sub: '전체 공급량의 극소 지분' };
+    }
+    if (pct >= 1) return { main: pct.toFixed(2) + '%', sub: `${btc} of ${supply.toLocaleString('en-US')} BTC` };
+    if (pct >= 0.01) return { main: pct.toFixed(4) + '%', sub: `1 in ${Math.round(ratio).toLocaleString('en-US')}` };
+    if (ratio < 1e6) return { main: `1 in ${Math.round(ratio).toLocaleString('en-US')}`, sub: pct.toFixed(6) + '%' };
+    if (ratio < 1e8) return { main: `1 in ${(ratio / 1e6).toFixed(2)}M`, sub: pct.toFixed(8) + '%' };
+    return { main: `1 in ${(ratio / 1e9).toFixed(2)}B`, sub: 'Extremely small share of supply' };
+  };
+
+  // satoshi 단위 표시
+  const fmtSatoshi = (btc) => {
+    const sats = Math.round(btc * 1e8);
+    if (sats >= 1e8) return `${(sats / 1e8).toLocaleString()} BTC (${sats.toLocaleString()} sat)`;
+    if (sats >= 1e6) return `${(sats / 1e6).toFixed(2)}M sat · ${sats.toLocaleString()} satoshi`;
+    return `${sats.toLocaleString()} satoshi`;
+  };
+
+  const DPR = window.devicePixelRatio || 1;
+  const compactViewportQuery = window.matchMedia('(min-width: 1280px) and (min-height: 860px)');
+
+  function drawPopulationGrid(btc) {
+    const rect = canvas.getBoundingClientRect();
+    const cssW = rect.width;
+    const ratio = compactViewportQuery.matches ? 0.22 : 0.52;
+    const cssH = Math.round(cssW * ratio);
+
+    canvas.width = Math.round(cssW * DPR);
+    canvas.height = Math.round(cssH * DPR);
+    canvas.style.height = cssH + 'px';
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const cols = 125;
+    const rows = 80;
+    const totalDots = cols * rows;
+
+    const padX = 16;
+    const padY = 16;
+    const availW = cssW - padX * 2;
+    const availH = cssH - padY * 2;
+    const cellW = availW / cols;
+    const cellH = availH / rows;
+    const dotR = Math.min(cellW, cellH) * 0.28;
+
+    // 실제 보유자 수 기반 골드 점 계산
+    let goldenDotsRaw = 0;
+    if (btc > 0) {
+      const holders = estimateHolders(btc);
+      goldenDotsRaw = (holders / WORLD_POP) * totalDots;
+    }
+
+    // 배경 점
+    ctx.fillStyle = 'rgba(107, 95, 73, 0.32)';
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = padX + c * cellW + cellW / 2;
+        const y = padY + r * cellH + cellH / 2;
+        ctx.beginPath();
+        ctx.arc(x, y, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 골드 점
+    if (goldenDotsRaw > 0) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(245, 200, 122, 0.9)';
+      ctx.fillStyle = '#f5c87a';
+
+      if (goldenDotsRaw >= 1) {
+        const fullDots = Math.min(Math.floor(goldenDotsRaw), totalDots);
+        const partial = goldenDotsRaw - fullDots;
+
+        // Golden ratio로 균등 분포
+        const phi = (1 + Math.sqrt(5)) / 2;
+        const usedPositions = new Set();
+        let placed = 0;
+        let attempt = 0;
+        while (placed < fullDots && attempt < totalDots * 2) {
+          const idx = Math.floor(((attempt + 1) * phi * totalDots) % totalDots);
+          if (!usedPositions.has(idx)) {
+            usedPositions.add(idx);
+            const r = Math.floor(idx / cols);
+            const c = idx % cols;
+            const x = padX + c * cellW + cellW / 2;
+            const y = padY + r * cellH + cellH / 2;
+            ctx.beginPath();
+            ctx.arc(x, y, dotR * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+            placed++;
+          }
+          attempt++;
+        }
+
+        if (partial > 0.05 && placed < totalDots) {
+          let idx = Math.floor(((attempt + 1) * phi * totalDots) % totalDots);
+          while (usedPositions.has(idx)) idx = (idx + 1) % totalDots;
+          const r = Math.floor(idx / cols);
+          const c = idx % cols;
+          const x = padX + c * cellW + cellW / 2;
+          const y = padY + r * cellH + cellH / 2;
+          ctx.globalAlpha = partial;
+          ctx.beginPath();
+          ctx.arc(x, y, dotR * 1.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        // 1 dot 미만: 중앙에 pulse
+        const x = padX + availW / 2;
+        const y = padY + availH / 2;
+        const intensity = Math.max(0.3, goldenDotsRaw);
+        ctx.globalAlpha = intensity;
+        ctx.shadowBlur = 25;
+        ctx.beginPath();
+        ctx.arc(x, y, dotR * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    return goldenDotsRaw;
+  }
+
+  function update() {
+    const raw = parseFloat(btcInput.value);
+    let btc = Number.isFinite(raw) ? raw : 0;
+    const locale = currentLang === 'ko' ? 'ko-KR' : 'en-US';
+    let inputError = '';
+    if (btc < 0) {
+      btc = 0;
+      inputError = currentLang === 'ko' ? '음수는 허용되지 않아 0 BTC로 계산했습니다.' : 'Negative values are not allowed. Calculated as 0 BTC.';
+    } else if (btc > INPUT_MAX_BTC) {
+      btc = INPUT_MAX_BTC;
+      inputError = currentLang === 'ko'
+        ? `입력 상한(${INPUT_MAX_BTC.toLocaleString(locale)} BTC)을 넘어 상한값으로 계산했습니다.`
+        : `Input exceeded max (${INPUT_MAX_BTC.toLocaleString(locale)} BTC). Using the cap value.`;
+    }
+    if (raw !== btc && Number.isFinite(raw)) btcInput.value = btc.toString();
+    btcInputError.textContent = inputError;
+    const holders = btc > 0 ? estimateHolders(btc) : 0;
+    const holdersRounded = btc > 0 ? Math.max(1, Math.round(holders)) : 0;
+    const ratio = btc > 0 ? WORLD_POP / holders : 0;
+    const goldenDots = btc > 0 ? (holders / WORLD_POP) * 10_000 : 0;
+
+    const ratioTotalEl = document.getElementById('ratio-total');
+    const ratioTotalPctEl = document.getElementById('ratio-total-pct');
+    const ratioEffEl = document.getElementById('ratio-effective');
+    const ratioEffPctEl = document.getElementById('ratio-effective-pct');
+    const satTotalEl = document.getElementById('satoshi-total');
+    const satEffEl = document.getElementById('satoshi-effective');
+
+	    if (btc <= 0) {
+      ratioTotalEl.textContent = '— 분의 1';
+      ratioTotalPctEl.textContent = '—';
+      ratioEffEl.textContent = '— 분의 1';
+      ratioEffPctEl.textContent = '—';
+      satTotalEl.textContent = '—';
+      satEffEl.textContent = '—';
+    } else {
+      const fTotal = fmtFraction(btc, TOTAL_SUPPLY);
+      const fEff = fmtFraction(btc, EFFECTIVE_SUPPLY);
+
+      ratioTotalEl.textContent = fTotal.main;
+      ratioTotalPctEl.textContent = fTotal.sub;
+      ratioEffEl.textContent = fEff.main;
+      ratioEffPctEl.textContent = fEff.sub;
+
+      const satStr = fmtSatoshi(btc);
+      satTotalEl.textContent = satStr;
+      satEffEl.textContent = satStr;
+    }
+
+    if (btc <= 0) {
+	      heroRatio.innerHTML = currentLang === 'ko' ? '— <span class="suffix">명 중 1명</span>' : '— <span class="suffix">people per 1</span>';
+	      heroSub.textContent = currentLang === 'ko' ? '비트코인을 입력해 주세요.' : 'Enter your BTC amount.';
+	      heroEstimate.textContent = 'Estimated holders: —';
+	      rarityMetricDots.textContent = '—';
+	      rarityMetricPct.textContent = '—';
+      landAreaMain.textContent = '— km²';
+	      landAreaSub.textContent = currentLang === 'ko'
+          ? '보유량을 2,100만 BTC 기준으로 지구 육지 면적에 선형 환산한 값입니다.'
+          : 'A linear mapping of your BTC to Earth land area based on 21,000,000 BTC.';
+	      landAreaCity.textContent = currentLang === 'ko'
+          ? '비트코인을 입력하면 유사 면적 도시 비교가 표시됩니다.'
+          : 'Enter BTC to see a city-area comparison.';
+	    } else {
+	      let ratioDisplay;
+	      if (currentLang === 'ko') {
+          if (ratio >= 1e8) ratioDisplay = (ratio / 1e8).toFixed(1) + '억';
+          else if (ratio >= 1e6) ratioDisplay = (ratio / 1e4).toFixed(0) + '만';
+          else if (ratio >= 1e4) ratioDisplay = fmtKorean(ratio);
+          else if (ratio >= 10) ratioDisplay = Math.round(ratio).toLocaleString(locale);
+          else if (ratio >= 1) ratioDisplay = ratio.toFixed(1);
+          else ratioDisplay = '1';
+          heroRatio.innerHTML = `${ratioDisplay} <span class="suffix">명 중 1명</span>`;
+        } else {
+          if (ratio >= 1e9) ratioDisplay = (ratio / 1e9).toFixed(2) + 'B';
+          else if (ratio >= 1e6) ratioDisplay = (ratio / 1e6).toFixed(2) + 'M';
+          else if (ratio >= 1e3) ratioDisplay = Math.round(ratio).toLocaleString(locale);
+          else if (ratio >= 1) ratioDisplay = ratio.toFixed(1);
+          else ratioDisplay = '1';
+          heroRatio.innerHTML = `${ratioDisplay} <span class="suffix">people per 1</span>`;
+        }
+
+	      // 비교 문구 간결화
+	      const KR_POP = 51_000_000;
+	      const SEOUL_POP = 9_400_000;
+	      const GANGNAM_POP = 550_000;
+	      let comparison = '';
+
+		      if (ratio >= KR_POP) {
+		        const koreas = (ratio / KR_POP).toFixed(1);
+		        comparison = currentLang === 'ko'
+              ? `한국 인구 규모를 <strong>${koreas}배</strong> 모아야 1명 수준입니다.`
+              : `Roughly one holder in a population <strong>${koreas}x Korea</strong>.`;
+		      } else if (ratio >= SEOUL_POP) {
+		        const seoulX = (ratio / SEOUL_POP).toFixed(1);
+		        comparison = currentLang === 'ko'
+              ? `서울 인구를 <strong>${seoulX}배</strong> 모아야 1명 수준입니다.`
+              : `About one holder per <strong>${seoulX}x Seoul population</strong>.`;
+		      } else if (ratio >= GANGNAM_POP) {
+		        const gangnamX = (ratio / GANGNAM_POP).toFixed(1);
+		        comparison = currentLang === 'ko'
+              ? `강남구 인구를 <strong>${gangnamX}배</strong> 모아야 1명 수준입니다.`
+              : `About one holder per <strong>${gangnamX}x Gangnam population</strong>.`;
+		      } else if (ratio >= 10_000) {
+		        const campuses = Math.round(ratio / 20_000);
+		        if (campuses >= 2) {
+		          comparison = currentLang === 'ko'
+                ? `2만 명 캠퍼스 <strong>${campuses}개</strong> 규모당 1명 수준입니다.`
+                : `Roughly one holder per <strong>${campuses} campuses</strong> of 20k people.`;
+		        } else {
+		          comparison = currentLang === 'ko'
+                ? `2만 명 규모에서 약 <strong>${Math.round(20_000 / ratio)}명</strong> 수준입니다.`
+                : `Around <strong>${Math.round(20_000 / ratio)}</strong> holders in a 20k population.`;
+		        }
+		      } else if (ratio >= 1000) {
+		        const townX = (ratio / 1000).toFixed(1);
+		        comparison = currentLang === 'ko'
+              ? `1,000명 단위로 <strong>${townX}배</strong> 모아야 1명 수준입니다.`
+              : `About one holder per <strong>${townX}x</strong> groups of 1,000 people.`;
+		      } else if (ratio >= 100) {
+		        comparison = currentLang === 'ko'
+              ? ''
+              : '';
+		      } else if (ratio >= 10) {
+		        comparison = currentLang === 'ko'
+              ? '10명 단위 집단에서도 1명 미만 수준입니다.'
+              : 'Even in a group of 10, expected holders are below one.';
+		      } else {
+		        comparison = currentLang === 'ko'
+              ? '소액 보유 구간으로 비교적 흔한 영역입니다.'
+              : 'This is a relatively common range among small holders.';
+		      }
+
+		      const comparisonTail = comparison ? ` ${comparison}` : '';
+		      heroSub.innerHTML = currentLang === 'ko'
+          ? `전 세계 인구 기준 <strong>${ratioDisplay}명당 1명</strong>이 <strong>${btc} BTC 이상</strong>을 보유합니다.${comparisonTail}`
+          : `Globally, about <strong>1 person per ${ratioDisplay}</strong> holds at least <strong>${btc} BTC</strong>.${comparisonTail}`;
+	        heroEstimate.innerHTML = currentLang === 'ko'
+          ? `Estimated holders (>= ${btc} BTC): <strong>약 ${holdersRounded.toLocaleString(locale)}명</strong>`
+          : `Estimated holders (>= ${btc} BTC): <strong>~${holdersRounded.toLocaleString(locale)}</strong>`;
+
+        const sharePct = (btc / EFFECTIVE_SUPPLY) * 100;
+        const shareText = sharePct >= 0.01 ? `${sharePct.toFixed(3)}%` : `${sharePct.toFixed(6)}%`;
+
+        const mappedLandKm2 = (btc / TOTAL_SUPPLY) * EARTH_LAND_AREA_KM2;
+        const nearestCity = getNearestCityByArea(mappedLandKm2);
+        const cityRatio = mappedLandKm2 / nearestCity.areaKm2;
+        const cityPct = cityRatio * 100;
+        let cityText = '';
+          const cityName = currentLang === 'ko' ? nearestCity.nameKo : nearestCity.nameEn;
+	        if (cityPct >= 100) {
+	          cityText = currentLang === 'ko'
+              ? `<strong>${cityName}</strong> 면적의 약 <strong>${cityRatio.toFixed(2)}배</strong> 수준입니다.`
+              : `About <strong>${cityRatio.toFixed(2)}x</strong> the area of <strong>${cityName}</strong>.`;
+	        } else {
+	          cityText = currentLang === 'ko'
+              ? `<strong>${cityName}</strong> 면적의 약 <strong>${cityPct.toFixed(1)}%</strong> 수준입니다.`
+              : `About <strong>${cityPct.toFixed(1)}%</strong> of <strong>${cityName}</strong>.`;
+	        }
+	        landAreaMain.textContent = `${fmtAreaKm2(mappedLandKm2)} km²`;
+	        landAreaSub.textContent = currentLang === 'ko'
+            ? `${btc.toLocaleString(locale)} BTC를 지구 육지면적 148,940,000 km²에 비례 환산한 결과입니다.`
+            : `Mapped from ${btc.toLocaleString(locale)} BTC to Earth land area (148,940,000 km²).`;
+	        landAreaCity.innerHTML = cityText;
+	    }
+
+    if (btc <= 0) {
+	      gridCaption.innerHTML = currentLang === 'ko' ? '비트코인을 입력하면 여기에 비유가 나타납니다.' : 'Enter BTC to see the analogy.';
+      canvas.style.display = 'block';
+      rarityAlt.hidden = true;
+      drawPopulationGrid(0);
+    } else if (goldenDots >= 100) {
+	      gridCaption.innerHTML = currentLang === 'ko'
+        ? `10,000명 중 <span class="highlight">약 ${Math.round(goldenDots).toLocaleString(locale)}명</span>이 당신과 같은 수준 이상의 비트코인을 보유합니다.`
+        : `In 10,000 people, about <span class="highlight">${Math.round(goldenDots).toLocaleString(locale)}</span> hold at least your BTC amount.`;
+      canvas.style.display = 'block';
+      rarityAlt.hidden = true;
+      drawPopulationGrid(btc);
+    } else if (goldenDots >= 10) {
+	      gridCaption.innerHTML = currentLang === 'ko'
+        ? `10,000명 중 <span class="highlight">약 ${Math.round(goldenDots)}</span>명만이 당신만큼 보유합니다. 상당히 희소한 편입니다.`
+        : `In 10,000 people, only <span class="highlight">${Math.round(goldenDots)}</span> are at your level. Quite rare.`;
+      canvas.style.display = 'block';
+      rarityAlt.hidden = true;
+      drawPopulationGrid(btc);
+    } else if (goldenDots >= 1) {
+	      gridCaption.innerHTML = currentLang === 'ko'
+        ? `10,000명 중 <span class="highlight">단 ${goldenDots.toFixed(1)}명</span>만이 당신과 같은 수준입니다. 대단히 희소한 보유자입니다.`
+        : `In 10,000 people, only <span class="highlight">${goldenDots.toFixed(1)}</span> match your level. Extremely rare.`;
+      canvas.style.display = 'block';
+      rarityAlt.hidden = true;
+      drawPopulationGrid(btc);
+    } else if (goldenDots >= 0.01) {
+      const per = Math.round(10000 / goldenDots);
+	      gridCaption.innerHTML = currentLang === 'ko'
+        ? `세계 인구 <span class="highlight">${fmtPeopleUnit(per)}명당 1명</span>꼴입니다. 10,000명 중에서는 한 명 찾기도 어려운 수준입니다.`
+        : `About <span class="highlight">1 per ${fmtPeopleUnit(per)}</span>. In 10,000 people, finding one is difficult.`;
+      canvas.style.display = 'none';
+      rarityAlt.hidden = false;
+	      rarityAltMain.textContent = currentLang === 'ko' ? `${fmtPeopleUnit(per)}명당 1명` : `1 per ${fmtPeopleUnit(per)}`;
+	      rarityAltSub.textContent = currentLang === 'ko'
+          ? `10,000점에서는 ${goldenDots.toFixed(3)}명 수준이라 숫자 카드로 간단히 보여드립니다.`
+          : `At 10,000 scale this is ${goldenDots.toFixed(3)}, so we show compact numeric cards.`;
+	      rarityMetricDots.textContent = currentLang === 'ko' ? `${goldenDots.toFixed(3)}명` : goldenDots.toFixed(3);
+	      rarityMetricPct.textContent = ((holders / WORLD_POP) * 100).toFixed(4) + '%';
+	    } else {
+	      gridCaption.innerHTML = currentLang === 'ko'
+        ? `전 세계 중에서도 극소수에 해당하는 <span class="highlight">진정한 고래(whale)</span> 영역입니다.`
+        : `This sits in an <span class="highlight">ultra-rare whale</span> zone globally.`;
+      canvas.style.display = 'none';
+      rarityAlt.hidden = false;
+      const per = Math.round(10000 / Math.max(goldenDots, 1e-12));
+	      rarityAltMain.textContent = currentLang === 'ko' ? `${fmtPeopleUnit(per)}명당 1명` : `1 per ${fmtPeopleUnit(per)}`;
+	      rarityAltSub.textContent = currentLang === 'ko'
+          ? '극소수 구간이라 점 시각화보다 핵심 수치만 표시합니다.'
+          : 'This is too sparse for dot charts, so only key numeric signals are shown.';
+	      rarityMetricDots.textContent = currentLang === 'ko' ? `${goldenDots.toExponential(2)}명` : goldenDots.toExponential(2);
+	      rarityMetricPct.textContent = ((holders / WORLD_POP) * 100).toExponential(2) + '%';
+	    }
+
+		    if (btc <= 0) {
+		      assumptionNote.innerHTML = currentLang === 'ko'
+          ? '계산 전제: 이 시각화는 전 세계 인구 83억 명을 10,000명으로 축소해 같은 비율로 표시합니다. 입력값을 넣으면 실제 계산식을 함께 보여드립니다.'
+          : 'Assumption: This scales 8.3B people down to 10,000 while preserving ratio. Enter BTC to see the exact formula.';
+		    } else {
+		      assumptionNote.innerHTML = currentLang === 'ko'
+          ? `계산 전제: <strong>세계 83억 명 → 점 10,000개</strong> 축소 모델입니다. <strong>(${holdersRounded.toLocaleString(locale)} ÷ 8,300,000,000) × 10,000 = ${goldenDots.toFixed(2)}명</strong>. 주소 분포 기반 추정치이며 <strong>주소 수 ≠ 개인 수</strong>입니다.`
+          : `Assumption: <strong>8.3B people → 10,000 dots</strong> scaled model. <strong>(${holdersRounded.toLocaleString(locale)} ÷ 8,300,000,000) × 10,000 = ${goldenDots.toFixed(2)}</strong>. This is address-distribution-based estimation, and <strong>addresses ≠ individuals</strong>.`;
+		    }
+
+  }
+
+  btcInput.addEventListener('input', update);
+  quickBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btcInput.value = btn.dataset.amount;
+      update();
+    });
+  });
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => update(), 150);
+  });
+  langKoBtn.addEventListener('click', () => {
+    currentLang = 'ko';
+    localStorage.setItem('btc_scarcity_lang', currentLang);
+    applyLanguage();
+    update();
+  });
+  langEnBtn.addEventListener('click', () => {
+    currentLang = 'en';
+    localStorage.setItem('btc_scarcity_lang', currentLang);
+    applyLanguage();
+    update();
+  });
+
+  function init() {
+    applyLanguage();
+    update();
+  }
+  if (document.readyState === 'complete') init();
+  else window.addEventListener('load', init);
+</script>
+
+</body>
+</html>
