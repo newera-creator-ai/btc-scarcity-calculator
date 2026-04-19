@@ -7,15 +7,16 @@ A single-page project that visualizes Bitcoin rarity based on your BTC holdings,
 - Korean/English language toggle
 
 ## Key Features
-- BTC input with quick-select buttons
+- BTC input with quick-select buttons (0.01 / 0.1 / 0.5 / 1 / 5 / 10)
 - Scarcity calculation against:
-  - Total supply (21M BTC)
-  - Effective supply (estimated)
-- Population rarity shown as `1 in X people`
-- `10,000`-scale world visualization
-- Compact fallback view for ultra-rare ranges (sub-1 in the dot model)
-- BTC-to-Earth-land-area analogy card
-- Language preference persisted via `localStorage`
+  - Total supply (21M BTC) — theoretical maximum
+  - Effective supply (~16.51M BTC) — after deducting estimated lost coins (~3.5M)
+- Satoshi-unit breakdown displayed on each scarcity card
+- Population rarity shown as `1 in X people` based on estimated wallet distribution (Glassnode, BitInfoCharts)
+- `10,000`-dot world population visualization
+- Compact numeric fallback for ultra-rare ranges (sub-1 in the dot model)
+- BTC → Earth land area analogy with nearest city comparison
+- Korean/English toggle with `localStorage` persistence
 
 ## Data & Assumptions
 - Uses address-distribution-based estimates (referencing Glassnode and BitInfoCharts)
