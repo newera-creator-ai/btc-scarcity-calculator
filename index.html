@@ -1026,7 +1026,7 @@
       const worldPctText = fmtPct(worldPct);
       const holderPoolPctText = fmtPct(holderPoolPct);
       const richerCount = Math.max(0, holdersRounded - 1);
-      const perOne = Math.max(1, Math.round(ratio));
+      const perOne = Math.max(1, Math.round(holderPoolBase / holders));
 
       ratioTotalEl.innerHTML = currentLang === 'ko'
         ? `세계 인구 대비 ${worldPctText}%<br>보유자 풀 대비 ${holderPoolPctText}%`
@@ -1044,8 +1044,8 @@
         ? `기준: ≥ ${btc.toLocaleString(locale)} BTC`
         : `Threshold: ≥ ${btc.toLocaleString(locale)} BTC`;
       satEffEl.textContent = currentLang === 'ko'
-        ? `대략 ${perOne.toLocaleString(locale)}명당 1개 주소 수준`
-        : `About 1 address per ${perOne.toLocaleString(locale)} people`;
+        ? `대략 ${perOne.toLocaleString(locale)}개 주소당 1개 주소 수준`
+        : `About 1 address per ${perOne.toLocaleString(locale)} addresses`;
     }
 
     if (btc <= 0) {
