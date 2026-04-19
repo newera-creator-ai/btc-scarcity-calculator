@@ -26,7 +26,11 @@
     --mono: 'JetBrains Mono', monospace;
     --panel-width: 420px;
     --stat-panel-width: 470px;
-    --panel-height: 210px;
+    --panel-height: 260px;
+    --desktop-top-gap: 24px;
+    --desktop-rarity-gap: 20px;
+    --desktop-row-width: 1128px;
+    --desktop-top-card-width: calc((var(--desktop-row-width) - (var(--desktop-top-gap) * 2)) / 3);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -86,38 +90,44 @@
   .subhead { font-size: 18px; color: var(--ink-muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
   .panel-row {
     display: flex;
-    gap: 24px;
+    gap: var(--desktop-top-gap);
     justify-content: center;
     align-items: stretch;
     flex-wrap: wrap;
     margin-bottom: 60px;
   }
-  .input-section {
-    width: min(100%, var(--panel-width));
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
   .input-card {
     background: rgba(232, 184, 90, 0.04);
     border: 1px solid var(--border-strong); border-radius: 2px;
     padding: 18px 20px; margin: 0;
-    width: 100%;
+    width: min(100%, var(--desktop-top-card-width));
     min-height: var(--panel-height);
     box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.18);
     animation: fadeInUp 0.8s ease 0.1s both;
     text-align: center;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
   }
-  .input-label { font-family: var(--display); font-size: 20px; letter-spacing: -0.01em; color: var(--ink); margin-bottom: 10px; display: block; font-weight: 600; line-height: 1.2; text-align: center; }
+  .input-label {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 14px;
+    display: block;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: none;
+  }
   .input-help { margin-top: 8px; color: var(--ink-faint); font-size: 12px; line-height: 1.5; }
   .input-error { margin-top: 6px; color: #ffcf96; font-size: 12px; min-height: 1.2em; }
   .btc-input-wrapper { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--border-strong); padding-bottom: 8px; margin-bottom: 10px; transition: border-color 0.3s; }
   .btc-input-wrapper:focus-within { border-bottom-color: var(--gold-bright); }
   .btc-input { flex: 1; background: transparent; border: none; outline: none; color: var(--ink); font-family: var(--mono); font-size: 42px; font-weight: 700; letter-spacing: -0.02em; width: 100%; }
+  .btc-input { text-align: right; }
   .btc-input::placeholder { color: var(--ink-faint); }
   .btc-input::-webkit-outer-spin-button,
   .btc-input::-webkit-inner-spin-button {
@@ -134,11 +144,11 @@
   .quick-btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); background: rgba(232, 184, 90, 0.1); }
   .results {
     display: flex;
-    gap: 24px;
+    gap: var(--desktop-top-gap);
     margin-bottom: 0;
     justify-content: center;
     flex-wrap: nowrap;
-    width: calc(var(--stat-panel-width) * 2 + 24px);
+    width: calc(var(--desktop-top-card-width) * 2 + var(--desktop-top-gap));
     max-width: 100%;
   }
   @media (max-width: 1160px) { .results { flex-wrap: wrap; } }
@@ -150,11 +160,11 @@
     padding: 16px;
     position: relative;
     overflow: hidden;
-    width: min(100%, var(--stat-panel-width));
+    width: min(100%, var(--desktop-top-card-width));
     height: var(--panel-height);
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     text-align: center;
     box-shadow: inset 0 0 0 1px rgba(247, 208, 128, 0.16);
@@ -177,14 +187,20 @@
     line-height: 1.2;
     color: var(--gold-bright);
     letter-spacing: -0.01em;
+    margin-top: auto;
     margin-bottom: 6px;
     white-space: nowrap;
     word-break: keep-all;
   }
+  #ratio-total {
+    white-space: normal;
+    line-height: 1.35;
+    font-size: clamp(18px, 2.1vw, 26px);
+  }
   .stat-value-sub { font-family: var(--mono); font-size: 13px; color: var(--gold-dim); letter-spacing: 0.08em; margin-bottom: 16px; font-weight: 500; }
   .stat-desc { font-size: 15px; color: var(--ink-muted); line-height: 1.6; }
   .stat-desc strong { color: var(--gold-bright); font-weight: 600; }
-  .stat-fraction { font-family: var(--mono); font-size: 13px; color: var(--ink-faint); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); letter-spacing: 0.05em; word-break: break-all; font-weight: 400; }
+  .stat-fraction { font-family: var(--mono); font-size: 13px; color: var(--ink-faint); margin-top: 12px; margin-bottom: auto; padding-top: 12px; border-top: 1px solid var(--border); letter-spacing: 0.05em; word-break: break-all; font-weight: 400; }
   .input-card > *,
   .stat-card > * { width: 100%; }
   .section { margin-top: 56px; animation: fadeInUp 0.8s ease 0.2s both; }
@@ -283,6 +299,36 @@
     letter-spacing: 0.06em;
     color: var(--ink-faint);
   }
+  @media (min-width: 981px) {
+    .panel-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      width: 100%;
+      gap: var(--desktop-top-gap);
+    }
+    .panel-row > .input-card {
+      grid-column: span 2;
+      width: 100%;
+      max-width: none;
+    }
+    .results {
+      display: contents;
+    }
+    .panel-row .stat-card {
+      grid-column: span 2;
+      width: 100%;
+      max-width: none;
+      flex: initial;
+    }
+    .rarity-layout {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      width: 100%;
+      gap: var(--desktop-rarity-gap);
+    }
+    .rarity-layout > .scarcity-hero { grid-column: span 3; }
+    .rarity-layout > .land-card { grid-column: span 3; }
+  }
+
   @media (max-width: 980px) {
     .rarity-layout { grid-template-columns: 1fr; }
   }
@@ -401,16 +447,21 @@
     .eyebrow { margin-bottom: 8px; font-size: 11px; }
     .headline { font-size: clamp(24px, 2.4vw, 34px); margin-bottom: 8px; line-height: 1.04; white-space: nowrap; }
     .subhead { margin: 0; max-width: none; font-size: 15px; line-height: 1.45; }
-    .panel-row { grid-area: top; margin-bottom: 0; gap: 10px; justify-content: flex-start; flex-wrap: nowrap; }
-    .input-section { max-width: none; }
-    .input-card { margin: 0; max-width: none; padding: 14px 14px; animation: none; height: var(--panel-height); min-height: unset; }
-    .input-label { margin-bottom: 8px; font-size: 17px; }
+    .panel-row {
+      grid-area: top;
+      margin-bottom: 0;
+      gap: 10px;
+      --desktop-top-gap: 10px;
+      --desktop-rarity-gap: 10px;
+    }
+    .input-card { margin: 0; max-width: none; padding: 14px 14px; animation: none; min-height: var(--panel-height); }
+    .input-label { margin-bottom: 10px; font-size: 17px; }
     .btc-input-wrapper { margin-bottom: 12px; }
     .btc-input { font-size: 40px; }
     .btc-suffix { font-size: 16px; }
     .quick-btn { padding: 8px 14px; font-size: 13px; }
     .input-help, .input-error { margin-top: 8px; font-size: 12px; }
-    .results { margin-bottom: 0; gap: 10px; align-content: start; justify-content: flex-start; flex-wrap: nowrap; width: calc(var(--stat-panel-width) * 2 + 10px); }
+    .results { margin-bottom: 0; gap: var(--desktop-top-gap); }
     .stat-card { padding: 14px; }
     .stat-label { font-size: 17px; margin-bottom: 8px; }
     .stat-value { font-size: clamp(18px, 2vw, 26px); margin-bottom: 4px; }
@@ -429,7 +480,11 @@
     .scarcity-big { font-size: clamp(28px, 4vw, 48px); margin-bottom: 4px; }
     .scarcity-sub { margin-top: 10px; font-size: 15px; line-height: 1.55; }
     .scarcity-estimate { margin-top: 8px; font-size: 12px; }
-    .rarity-layout { gap: 10px; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr); }
+    .rarity-layout {
+      gap: var(--desktop-rarity-gap);
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      width: 100%;
+    }
     .land-card { padding: 14px 16px; }
     .land-title { font-size: 17px; margin-bottom: 8px; }
     .land-label { margin-bottom: 8px; }
@@ -462,9 +517,8 @@
   </header>
 
   <div class="panel-row">
-    <div class="input-section">
-    <label class="input-label" id="input-label" for="btc-input">보유 비트코인 입력</label>
     <div class="input-card" id="input-card">
+      <label class="input-label" id="input-label" for="btc-input">보유 비트코인 입력</label>
       <div class="btc-input-wrapper">
         <input type="number" id="btc-input" class="btc-input" placeholder="0.00" step="0.001" min="0" max="5000000" value="0.1" aria-describedby="btc-input-help btc-input-error" />
         <span class="btc-suffix">BTC</span>
@@ -480,21 +534,20 @@
         <button type="button" class="quick-btn" data-amount="10">10</button>
       </div>
     </div>
-    </div>
 
     <div class="results" id="stats-results">
       <div class="stat-card">
-        <div class="stat-label" id="stat-label-total">전체 공급량 (2,100만 개) 중</div>
-        <div class="stat-value" id="ratio-total">— 개 중 1개</div>
+        <div class="stat-label" id="stat-label-total">예상 주소 상위 비율</div>
+        <div class="stat-value" id="ratio-total">세계 인구 대비 —%<br>보유자 풀 대비 —%</div>
         <div class="stat-value-sub" id="ratio-total-pct">—</div>
-        <div class="stat-desc" id="stat-desc-total">이론적 최대 발행량 기준 희소성</div>
+        <div class="stat-desc" id="stat-desc-total"></div>
         <div class="stat-fraction" id="satoshi-total">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label" id="stat-label-effective">유효 공급량 (~1,651만 개) 중</div>
-        <div class="stat-value" id="ratio-effective">— 개 중 1개</div>
+        <div class="stat-label" id="stat-label-effective">나보다 많이 가진 사람 수(추정)</div>
+        <div class="stat-value" id="ratio-effective">약 —명</div>
         <div class="stat-value-sub" id="ratio-effective-pct">—</div>
-        <div class="stat-desc" id="stat-desc-effective">분실분 제외 실제 유통 기준 희소성</div>
+        <div class="stat-desc" id="stat-desc-effective">입력값 이상 보유자 수를 기반으로 한 근사치</div>
         <div class="stat-fraction" id="satoshi-effective">—</div>
       </div>
     </div>
@@ -570,6 +623,7 @@
   const LOST_ESTIMATE = 3_500_000;
   const EFFECTIVE_SUPPLY = CURRENT_MINED - LOST_ESTIMATE;
   const WORLD_POP = 8_300_000_000;
+  const HOLDER_POOL_BASE = 51_273_077;
   const INPUT_MAX_BTC = 5_000_000;
   const EARTH_LAND_AREA_KM2 = 148_940_000;
   const CITY_AREA_REFERENCES = [
@@ -585,10 +639,10 @@
       subhead: '실제 비트코인 보유자 분포 데이터를 기반으로, 전 세계 83억 인구 중 당신이 차지하는 희소성을 계산합니다. ⚠ 단순 참고용/재미용으로 보시기 바랍니다. 투자 조언이 아니며, 매매 판단 책임은 사용자에게 있습니다.',
       inputLabel: '보유 비트코인 입력',
       inputHelp: `입력 범위: 0 ~ ${INPUT_MAX_BTC.toLocaleString('ko-KR')} BTC`,
-      statLabelTotal: '전체 공급량 (2,100만 개) 중',
-      statDescTotal: '이론적 최대 발행량 기준 희소성',
-      statLabelEffective: '유효 공급량 (~1,651만 개) 중',
-      statDescEffective: '분실분 제외 실제 유통 기준 희소성',
+      statLabelTotal: '예상 주소 상위 비율',
+      statDescTotal: '',
+      statLabelEffective: '나보다 많이 가진 주소 수(추정)',
+      statDescEffective: '입력값 이상 보유 주소 수를 기반으로 한 근사치',
       rarityCardTitle: '세계 인구 중 몇 명당 1명',
       rarityBasis: '실제 비트코인 지갑 분포(Glassnode, BitInfoCharts 데이터)를 기준',
       heroLabel: 'Your Rarity',
@@ -614,10 +668,10 @@
       subhead: 'Based on estimated holder-distribution data, this calculates your rarity among a world population of 8.3 billion. ⚠ For reference/entertainment only. Not investment advice; all trading decisions are your responsibility.',
       inputLabel: 'Bitcoin Holdings',
       inputHelp: `Input range: 0 ~ ${INPUT_MAX_BTC.toLocaleString('en-US')} BTC`,
-      statLabelTotal: 'Within Total Supply (21M BTC)',
-      statDescTotal: 'Scarcity against theoretical max supply',
-      statLabelEffective: 'Within Effective Supply (~16.51M BTC)',
-      statDescEffective: 'Scarcity against estimated circulating supply',
+      statLabelTotal: 'Top Address Percentile',
+      statDescTotal: '',
+      statLabelEffective: 'Addresses Holding More Than You (Est.)',
+      statDescEffective: 'Approximation based on addresses at/above your BTC',
       rarityCardTitle: 'How Many People Per 1 Holder?',
       rarityBasis: 'Based on estimated wallet distribution (Glassnode, BitInfoCharts)',
       heroLabel: 'Your Rarity',
@@ -641,18 +695,18 @@
   };
   let currentLang = localStorage.getItem('btc_scarcity_lang') === 'en' ? 'en' : 'ko';
 
-  // 실제 비트코인 보유자 분포 (2026년 기준)
-  // 출처: Glassnode, BitInfoCharts
-  // (최소 BTC, 해당 양 이상을 보유한 전 세계 실제 개인 수)
+  // 비트코인 주소 분포 (2026년 기준)
+  // 출처: BitInfoCharts 분포표(>= threshold 누적 주소 수)
+  // (최소 BTC, 해당 양 이상을 보유한 주소 수)
   const HOLDER_DISTRIBUTION = [
-    [100,      25_000],
-    [10,       150_000],
-    [1,        950_000],
-    [0.1,      10_000_000],
-    [0.01,     40_000_000],
-    [0.001,    150_000_000],
-    [0.0001,   400_000_000],
-    [0.00001,  500_000_000],
+    [100,      20_069],
+    [10,       150_218],
+    [1,        974_405],
+    [0.1,      4_486_396],
+    [0.01,     12_750_613],
+    [0.001,    24_787_207],
+    [0.0001,   38_796_467],
+    [0.00001,  51_273_077],
   ].sort((a, b) => a[0] - b[0]); // asc
 
   // 로그-로그 보간으로 BTC 양에 따른 실제 보유자 수 추정
@@ -938,6 +992,7 @@
     const holders = btc > 0 ? estimateHolders(btc) : 0;
     const holdersRounded = btc > 0 ? Math.max(1, Math.round(holders)) : 0;
     const ratio = btc > 0 ? WORLD_POP / holders : 0;
+    const holderPoolBase = HOLDER_POOL_BASE;
     const goldenDots = btc > 0 ? (holders / WORLD_POP) * 10_000 : 0;
 
     const ratioTotalEl = document.getElementById('ratio-total');
@@ -948,24 +1003,49 @@
     const satEffEl = document.getElementById('satoshi-effective');
 
 	    if (btc <= 0) {
-      ratioTotalEl.textContent = '— 분의 1';
-      ratioTotalPctEl.textContent = '—';
-      ratioEffEl.textContent = '— 분의 1';
+      ratioTotalEl.innerHTML = currentLang === 'ko'
+        ? '세계 인구 대비 —%<br>보유자 풀 대비 —%'
+        : 'World population baseline —%<br>Holder pool baseline —%';
+      ratioTotalPctEl.textContent = '';
+      ratioTotalPctEl.style.display = 'none';
+      ratioEffEl.textContent = currentLang === 'ko' ? '약 —개 주소' : '~— addresses';
       ratioEffPctEl.textContent = '—';
       satTotalEl.textContent = '—';
       satEffEl.textContent = '—';
     } else {
-      const fTotal = fmtFraction(btc, TOTAL_SUPPLY);
-      const fEff = fmtFraction(btc, EFFECTIVE_SUPPLY);
+      const worldPct = (holders / WORLD_POP) * 100;
+      const holderPoolPct = Math.min(100, (holders / holderPoolBase) * 100);
+      const fmtPct = (v) => (
+        v >= 1 ? v.toFixed(2)
+          : v >= 0.1 ? v.toFixed(3)
+            : v >= 0.01 ? v.toFixed(4)
+              : v >= 0.001 ? v.toFixed(5)
+                : v >= 0.0001 ? v.toFixed(6)
+                  : v.toFixed(8)
+      );
+      const worldPctText = fmtPct(worldPct);
+      const holderPoolPctText = fmtPct(holderPoolPct);
+      const richerCount = Math.max(0, holdersRounded - 1);
+      const perOne = Math.max(1, Math.round(ratio));
 
-      ratioTotalEl.textContent = fTotal.main;
-      ratioTotalPctEl.textContent = fTotal.sub;
-      ratioEffEl.textContent = fEff.main;
-      ratioEffPctEl.textContent = fEff.sub;
+      ratioTotalEl.innerHTML = currentLang === 'ko'
+        ? `세계 인구 대비 ${worldPctText}%<br>보유자 풀 대비 ${holderPoolPctText}%`
+        : `World population baseline ${worldPctText}%<br>Holder pool baseline ${holderPoolPctText}%`;
+      ratioTotalPctEl.textContent = '';
+      ratioTotalPctEl.style.display = 'none';
+      satTotalEl.textContent = currentLang === 'ko'
+        ? `기준: 세계 83억명 / 추정 보유자 풀 ${holderPoolBase.toLocaleString(locale)}개 주소`
+        : `Baselines: 8.3B world / ${holderPoolBase.toLocaleString(locale)} estimated addresses`;
 
-      const satStr = fmtSatoshi(btc);
-      satTotalEl.textContent = satStr;
-      satEffEl.textContent = satStr;
+      ratioEffEl.textContent = currentLang === 'ko'
+        ? `약 ${richerCount.toLocaleString(locale)}개 주소`
+        : `~${richerCount.toLocaleString(locale)} addresses`;
+      ratioEffPctEl.textContent = currentLang === 'ko'
+        ? `기준: ≥ ${btc.toLocaleString(locale)} BTC`
+        : `Threshold: ≥ ${btc.toLocaleString(locale)} BTC`;
+      satEffEl.textContent = currentLang === 'ko'
+        ? `대략 ${perOne.toLocaleString(locale)}명당 1개 주소 수준`
+        : `About 1 address per ${perOne.toLocaleString(locale)} people`;
     }
 
     if (btc <= 0) {
